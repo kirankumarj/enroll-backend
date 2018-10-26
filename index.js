@@ -30,7 +30,9 @@ app.post('/invoice', (req, res) => {
 	let columns;
 	let grouping;
 	let additionalInfo = [];
-    let additionaldata;
+	let additionaldata;
+	let adobePDFInfo = [];
+    let adobePDFInfoData;
     let id;
     var query = "select count(*) as count from invoices";
 
@@ -52,9 +54,17 @@ app.post('/invoice', (req, res) => {
                     additionalInfo.push(key+'*'+req.body.additionalInfo[key])
                 }	
                 additionaldata = additionalInfo.join('!');
+			}
+			
+			if(req.body.adobePDFInfo) {
+                for(var key in req.body.adobePDFInfo) {
+                    // console.log('key :' , key , '::' , 'Value :' , req.body.adobePDFInfo[key]);
+                    adobePDFInfo.push(key+'*'+req.body.adobePDFInfo[key])
+                }	
+                adobePDFInfoData = adobePDFInfo.join('!');
             }
         
-            var sql = 'insert into invoices(invoiceLayout,isActiveInvoiceLayout,isDefaultInvoiceLayout,columns,grouping,additionaldata,logofilename,supresscompanylogo,removelogo,footerfilename,removefooter,id) values (?,?,?,?,?,?,?,?,?,?,?,?)';
+            var sql = 'insert into invoices(invoiceLayout,isActiveInvoiceLayout,isDefaultInvoiceLayout,columns,grouping,additionaldata,logofilename,supresscompanylogo,removelogo,footerfilename,removefooter,id,adobepdfdata) values (?,?,?,?,?,?,?,?,?,?,?,?,?)';
             
             // console.log(req.body.id+"::"+req.body.invoiceLayout+"::"+req.body.invoiceLayout+"SQL::"+sql);
             
@@ -69,7 +79,8 @@ app.post('/invoice', (req, res) => {
                     req.body.logoInfo.removeLogo,
                     req.body.footerInfo.fileName,
                     req.body.footerInfo.removeFooter,
-                    id], function (err, result) {
+					id,
+					adobePDFInfoData], function (err, result) {
                                         if (err) {
                                             // console.log(err);
                                             return res.send({res: "ERROR"});
@@ -99,7 +110,10 @@ app.put('/invoice/:id', (req, res) => {
 	let grouping;
 	let additionalInfo = [];
     let additionaldata;
-    let invoiceId = req.params['id'];
+	let invoiceId = req.params['id'];
+	let adobePDFInfo = [];
+	let adobePDFInfoData;
+	
     if(invoiceId) {
         if(req.body.columns) {
             columns = req.body.columns.join(",");
@@ -115,7 +129,16 @@ app.put('/invoice/:id', (req, res) => {
             additionaldata = additionalInfo.join('!');
         }
 
-        var sql = 'update invoices set invoiceLayout=?, isActiveInvoiceLayout=?, isDefaultInvoiceLayout=?, columns=?, grouping=?, additionaldata=?, logofilename=?, supresscompanylogo=? ,removelogo =?,footerfilename = ? , removefooter=? where id=?;';
+		if(req.body.adobePDFInfo) {
+			for(var key in req.body.adobePDFInfo) {
+				// console.log('key :' , key , '::' , 'Value :' , req.body.adobePDFInfo[key]);
+				adobePDFInfo.push(key+'*'+req.body.adobePDFInfo[key])
+			}	
+			adobePDFInfoData = adobePDFInfo.join('!');
+		}
+
+		
+        var sql = 'update invoices set invoiceLayout=?, isActiveInvoiceLayout=?, isDefaultInvoiceLayout=?, columns=?, grouping=?, additionaldata=?, logofilename=?, supresscompanylogo=? ,removelogo =?,footerfilename = ? , removefooter=?, adobepdfdata=? where id=?;';
         
         // console.log(req.body.id+"::"+req.body.invoiceLayout+"::"+req.body.invoiceLayout+"SQL::"+sql);
         
@@ -129,7 +152,8 @@ app.put('/invoice/:id', (req, res) => {
                 req.body.logoInfo.supressCompanyLogo,
                 req.body.logoInfo.removeLogo,
                 req.body.footerInfo.fileName,
-                req.body.footerInfo.removeFooter,
+				req.body.footerInfo.removeFooter,
+				adobePDFInfoData,
                 parseInt(invoiceId)], function (err, result) {
 
                 if (err) {
@@ -173,6 +197,26 @@ app.get('/invoice/:id', (req,res) => {
 			isIncludeAttachmentDownloadPDF : false,
 			isSuppressTotalPaymentToDate : false,
 		  };
+
+		  adobePDFInfo = {
+			pageOrientation: '',
+			expandPageWidthFitinvoice: false,
+			topMarginValue: 0,
+			topMarginTo: '',
+			bottomMarginValue: 0,
+			bottomMarginTo: '',
+			fontSize: 0,
+			font: '',
+			invoiceTitle: '',
+			isPrintHeaderDoubleWindow: false,
+			isPrintHeaderE65Window: false,
+			isPrintHeaderDLWindow: false,
+			isPrintHeaderC4Window: false,
+			isIncludeShipToAddressPDFInvoice: false,
+			isRepeatMultiPageInvoices: false,
+			remitToAddress:  '',
+		  };
+
 		  logoInfo = {
 			fileName: 'none' ,
 			path: '',
@@ -220,7 +264,26 @@ app.get('/invoice/:id', (req,res) => {
 					}
 					 // console.log('AdditionalData', additionalInfo);
 				}
-
+				console.log(value.adobepdfdata);
+				if(value.adobepdfdata) {
+					let divide = value.adobepdfdata.split('!');
+					
+					for(var key in divide) {
+						let pairs = divide[key].split('*');
+						// console.log(pairs);
+						var actualVal;
+						if(pairs[1] === 'true') {
+							actualVal = true;
+						} else if(pairs[1] === 'false') {
+							actualVal = false;
+						} else {
+							actualVal = pairs[1];
+						}
+						adobePDFInfo[pairs[0]] = actualVal;
+					}
+					 // console.log('AdditionalData', additionalInfo);
+				}
+				console.log(adobePDFInfo);
 				if(value.logofilename) {
 					logoInfo.fileName = value.logofilename;
 					logoInfo.path = 'http://localhost:3000/upload/';
@@ -242,7 +305,9 @@ app.get('/invoice/:id', (req,res) => {
 				value.additionalInfo = additionalInfo;
 				value.general = general;
 				value.footerInfo = footerInfo;
+				value.adobePDFInfo = adobePDFInfo;
 
+				delete value.adobepdfdata;
 				delete value.footerfilename;
 				delete value.removefooter;
 				delete value.logopath;
@@ -285,6 +350,24 @@ app.get('/invoice', (req,res) => {
 			isAddAttachmentLinks : false,
 			isIncludeAttachmentDownloadPDF : false,
 			isSuppressTotalPaymentToDate : false,
+		  };
+		  adobePDFInfo = {
+			pageOrientation: '',
+			expandPageWidthFitinvoice: false,
+			topMarginValue: 0,
+			topMarginTo: '',
+			bottomMarginValue: 0,
+			bottomMarginTo: '',
+			fontSize: 0,
+			font: '',
+			invoiceTitle: '',
+			isPrintHeaderDoubleWindow: false,
+			isPrintHeaderE65Window: false,
+			isPrintHeaderDLWindow: false,
+			isPrintHeaderC4Window: false,
+			isIncludeShipToAddressPDFInvoice: false,
+			isRepeatMultiPageInvoices: false,
+			remitToAddress:  '',
 		  };
 		  logoInfo = {
 			fileName: 'none' ,
@@ -334,6 +417,25 @@ app.get('/invoice', (req,res) => {
 					 // console.log('AdditionalData', additionalInfo);
 				}
 
+				if(value.adobepdfdata) {
+					let divide = value.adobepdfdata.split('!');
+					
+					for(var key in divide) {
+						let pairs = divide[key].split('*');
+						// console.log(pairs);
+						var actualVal;
+						if(pairs[1] === 'true') {
+							actualVal = true;
+						} else if(pairs[1] === 'false') {
+							actualVal = false;
+						} else {
+							actualVal = pairs[1];
+						}
+						adobePDFInfo[pairs[0]] = actualVal;
+					}
+					 // console.log('AdditionalData', additionalInfo);
+				}
+
 				if(value.logofilename) {
 					logoInfo.fileName = value.logofilename;
 					logoInfo.path = 'http://localhost:3000/upload/';
@@ -355,7 +457,9 @@ app.get('/invoice', (req,res) => {
 				value.additionalInfo = additionalInfo;
 				value.general = general;
 				value.footerInfo = footerInfo;
+				value.adobePDFInfo = adobePDFInfo;
 
+				delete value.adobepdfdata;
 				delete value.footerfilename;
 				delete value.removefooter;
 				delete value.logopath;
