@@ -196,6 +196,8 @@ app.get('/invoice/:id', (req,res) => {
 			isAddAttachmentLinks : false,
 			isIncludeAttachmentDownloadPDF : false,
 			isSuppressTotalPaymentToDate : false,
+			toAddress: '',
+    		fromAddress: ''
 		  };
 
 		  adobePDFInfo = {
@@ -350,6 +352,8 @@ app.get('/invoice', (req,res) => {
 			isAddAttachmentLinks : false,
 			isIncludeAttachmentDownloadPDF : false,
 			isSuppressTotalPaymentToDate : false,
+			toAddress: '',
+    		fromAddress: ''
 		  };
 		  adobePDFInfo = {
 			pageOrientation: '',
