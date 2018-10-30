@@ -64,7 +64,7 @@ app.post('/invoice', (req, res) => {
                 adobePDFInfoData = adobePDFInfo.join('!');
             }
         
-            var sql = 'insert into invoices(invoiceLayout,isActiveInvoiceLayout,isDefaultInvoiceLayout,columns,grouping,additionaldata,logofilename,supresscompanylogo,removelogo,footerfilename,removefooter,id,adobepdfdata) values (?,?,?,?,?,?,?,?,?,?,?,?,?)';
+            var sql = 'insert into invoices(invoiceLayout,isActiveInvoiceLayout,isDefaultInvoiceLayout,columns,grouping,additionaldata,logofilename,supresscompanylogo,removelogo,footerfilename,removefooter,id,adobepdfdata, toAddress, fromAddress) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)';
             
             // console.log(req.body.id+"::"+req.body.invoiceLayout+"::"+req.body.invoiceLayout+"SQL::"+sql);
             
@@ -78,9 +78,11 @@ app.post('/invoice', (req, res) => {
                     req.body.logoInfo.supressCompanyLogo,
                     req.body.logoInfo.removeLogo,
                     req.body.footerInfo.fileName,
-                    req.body.footerInfo.removeFooter,
+					req.body.footerInfo.removeFooter,
 					id,
-					adobePDFInfoData], function (err, result) {
+					adobePDFInfoData,
+					req.body.toAddress,
+					req.body.fromAddress], function (err, result) {
                                         if (err) {
                                             // console.log(err);
                                             return res.send({res: "ERROR"});
@@ -138,7 +140,7 @@ app.put('/invoice/:id', (req, res) => {
 		}
 
 		
-        var sql = 'update invoices set invoiceLayout=?, isActiveInvoiceLayout=?, isDefaultInvoiceLayout=?, columns=?, grouping=?, additionaldata=?, logofilename=?, supresscompanylogo=? ,removelogo =?,footerfilename = ? , removefooter=?, adobepdfdata=? where id=?;';
+        var sql = 'update invoices set invoiceLayout=?, isActiveInvoiceLayout=?, isDefaultInvoiceLayout=?, columns=?, grouping=?, additionaldata=?, logofilename=?, supresscompanylogo=? ,removelogo =?,footerfilename = ? , removefooter=?, adobepdfdata=?, toAddress=?, fromAddress=? where id=?;';
         
         // console.log(req.body.id+"::"+req.body.invoiceLayout+"::"+req.body.invoiceLayout+"SQL::"+sql);
         
@@ -154,6 +156,8 @@ app.put('/invoice/:id', (req, res) => {
                 req.body.footerInfo.fileName,
 				req.body.footerInfo.removeFooter,
 				adobePDFInfoData,
+				req.body.toAddress,
+				req.body.fromAddress,
                 parseInt(invoiceId)], function (err, result) {
 
                 if (err) {
@@ -195,9 +199,7 @@ app.get('/invoice/:id', (req,res) => {
 			formatHours : '',
 			isAddAttachmentLinks : false,
 			isIncludeAttachmentDownloadPDF : false,
-			isSuppressTotalPaymentToDate : false,
-			toAddress: '',
-    		fromAddress: ''
+			isSuppressTotalPaymentToDate : false
 		  };
 
 		  adobePDFInfo = {
@@ -351,9 +353,7 @@ app.get('/invoice', (req,res) => {
 			formatHours : '',
 			isAddAttachmentLinks : false,
 			isIncludeAttachmentDownloadPDF : false,
-			isSuppressTotalPaymentToDate : false,
-			toAddress: '',
-    		fromAddress: ''
+			isSuppressTotalPaymentToDate : false
 		  };
 		  adobePDFInfo = {
 			pageOrientation: '',
